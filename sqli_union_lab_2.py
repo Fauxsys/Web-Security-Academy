@@ -4,7 +4,7 @@ import sys
 from bs4 import BeautifulSoup
 import re
 
-# Lab: https://portswigger.net/web-security/sql-injection/union-attacks/lab-retrieve-data-from-other-tables
+# Lab: https://portswigger.net/web-security/sql-injection/union-attacks/lab-find-column-containing-text
 
 # API Parameters
 url = 'https://abcd.web-security-academy.net/'
