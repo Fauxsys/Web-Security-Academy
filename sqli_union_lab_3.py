@@ -54,7 +54,7 @@ def sqli_union_lab_2(lab2, null, sqli):
     :param sqli: Copy of global sqli variable
     :return:
     """
-    # Parse the HTML output using Beautiful Soup to grab the secret value
+    # # Parse the HTML output using Beautiful Soup to grab the secret value
     # html = BeautifulSoup(lab2.text, 'html.parser')
     # secret_string = html.find('p', {'id': 'hint'}).contents[0]
     # secret_value = re.search("['].*[']", secret_string)
