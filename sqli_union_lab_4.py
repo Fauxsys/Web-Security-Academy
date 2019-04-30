@@ -2,7 +2,6 @@
 import requests
 import sys
 from bs4 import BeautifulSoup
-import re
 
 # Lab: https://portswigger.net/web-security/sql-injection/union-attacks/lab-retrieve-multiple-values-in-single-column
 
