@@ -54,8 +54,8 @@ class Request:
         except requests.exceptions.RequestException as error:
             help_msg = 'Caught general exception:'
             exit(f'{help_msg} {error}')
-        else:
-            return response
+
+        return response
 
 @dataclass()
 class Injection(Request):
