@@ -15,36 +15,28 @@ To solve the lab, perform an SQL injection UNION attack that returns an addition
 """
 
 
-@dataclass()
-class Validator:
-    """Validate Requests Objects"""
-    request: Any
+def validate(response):
+    """
+    Validate Response Objects
 
-    def __post_init__(self):
-        functools.update_wrapper(self, self.request)
-
-    def __call__(self, *args, **kwargs):
-        response = self.request(*args, **kwargs)
-
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            if response.status_code == 404:
-                help_msg = 'The session you are looking for has expired.'
-                sys.exit(f'{response.status_code}: {response.reason}. {help_msg}')
-        except requests.exceptions.ConnectionError as error:
-            help_msg = 'Please make sure you are using a valid URL.'
-            sys.exit(f'{help_msg}\n{error}')
-        except requests.exceptions.Timeout:
-            help_msg = 'Request timed out. This may be due to using an outdated lab URL.'
-            sys.exit(f'{help_msg}')
-        except requests.exceptions.RequestException as error:
-            help_msg = 'Caught general exception:'
-            sys.exit(f'{help_msg} {error}')
-        return response
-
-
-requests.Session.request = Validator(requests.Session().request)
+    :param response: The Response object, which contains a server’s response to an HTTP request.
+    :return:
+    """
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        if response.status_code == 404:
+            help_msg = 'The session you are looking for has expired.'
+            sys.exit(f'{response.status_code}: {response.reason}. {help_msg}')
+    except requests.exceptions.ConnectionError as error:
+        help_msg = 'Please make sure you are using a valid URL.'
+        sys.exit(f'{help_msg}\n{error}')
+    except requests.exceptions.Timeout:
+        help_msg = 'Request timed out. This may be due to using an outdated lab URL.'
+        sys.exit(f'{help_msg}')
+    except requests.exceptions.RequestException as error:
+        help_msg = 'Caught general exception:'
+        sys.exit(f'{help_msg} {error}')
 
 
 @dataclass()
@@ -68,6 +60,7 @@ class Injection:
             self.null.extend([',', 'NULL', '--'])
             self.parameters['category'] = f"Lifestyle{' '.join(self.null)}"
             response = self.session.get(url=self.lab_url, params=self.parameters)
+            validate(response=response)
 
 
 if __name__ == '__main__':
