@@ -28,7 +28,7 @@ class Validator:
 
     def __call__(self, *args, **kwargs):
         self.num_calls += 1
-        logger.debug(f"Call {self.num_calls} of {self.request.__name__!r}")
+        logger.debug(f"Call {self.num_calls} of {self.request.__name__!r} with {kwargs}")
 
         try:
 
